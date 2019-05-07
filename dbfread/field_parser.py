@@ -96,6 +96,10 @@ class FieldParser:
                 # a NULL value.
                 return None
             else:
+                # indy hotfix ValueError
+                if data == b'\x00\x00\x00\x00\x00\x00\x00\x00':
+                    print('DEBUG: `parseD` using indy hotfix')
+                    return None
                 raise ValueError('invalid date {!r}'.format(data))
     
     def parseF(self, field, data):
@@ -171,7 +175,15 @@ class FieldParser:
                 return None
             else:
                 # Account for , in numeric fields
-                return float(data.replace(b',', b'.'))
+                try:
+                    return float(data.replace(b',', b'.'))
+                except ValueError as e:
+                    # INDY hotfix: ValueError could not convert string to float: b'.'
+                    if data == b'.':
+                        print('DEBUG: `parseN` using indy hotfix')
+                        return None
+                    else:
+                        raise e
 
     def parseO(self, field, data):
         """Parse long field (O) and return float."""
