@@ -4,6 +4,25 @@ Changes
 Release History
 ---------------
 
+(Next Version)
+^^^^^^^^^^^^^^^^^^
+
+* records are now returned ``dict`` instead of ``collections.OrderedDict``
+  in Python 3.7 and up (as well as CPython 3.6) since normal Python
+  dictionaries are now ordered.
+
+* null values in D, F and L fields that are padded with ``'\0'`` bytes
+  should now work return ``None``. (Fix by william-andre, pull request #35.)
+
+* dbf2sqlite: table name was not escaped for DROP TABLE (fix by k2s,
+  pull request #34).
+
+* added local tox tests (added by shawnbrown, pull request #54.)
+
+* tests were broken by incorrect use of fixtures (fix by Stanislav
+  Levin, pull request #33.)
+
+
 2.0.7 - 2016-11-24
 ^^^^^^^^^^^^^^^^^^
 

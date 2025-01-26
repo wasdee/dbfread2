@@ -1,7 +1,7 @@
 import datetime
 from decimal import Decimal
 from pytest import raises
-from .field_parser import FieldParser
+from dbfread.field_parser import FieldParser
 
 class MockHeader(object):
     dbversion = 0x02
@@ -120,7 +120,7 @@ def test_B():
     # Data must be exactly 8 bytes.
     with raises(Exception):
         parse(b'')
-    
+
     # In other db versions it is a memo index.
     parse = make_field_parser('B', dbversion=0x02,
                               memofile=MockMemoFile({1: b'test'}))

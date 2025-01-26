@@ -10,7 +10,7 @@ from .memo import BinaryMemo
 PY2 = sys.version_info[0] == 2
 
 if PY2:
-    decode_text = unicode
+    decode_text = unicode  # noqa: F821
 else:
     decode_text = str
 
@@ -22,8 +22,9 @@ class InvalidValue(bytes):
             # Make sure the string starts with "b'" in
             # "InvalidValue(b'value here')".
             text = 'b' + text
-            
+
         return 'InvalidValue({})'.format(text)
+
 
 class FieldParser:
     def __init__(self, table, memofile=None):
@@ -91,7 +92,7 @@ class FieldParser:
         try:
             return datetime.date(int(data[:4]), int(data[4:6]), int(data[6:8]))
         except ValueError:
-            if data.strip(b' 0') == b'':
+            if data.strip(b' 0\0') == b'':
                 # A record containing only spaces and/or zeros is
                 # a NULL value.
                 return None
@@ -101,7 +102,7 @@ class FieldParser:
                     print('DEBUG: `parseD` using indy hotfix')
                     return None
                 raise ValueError('invalid date {!r}'.format(data))
-    
+
     def parseF(self, field, data):
         """Parse float field and return float or None"""
         # In some files * is used for padding.
@@ -123,7 +124,7 @@ class FieldParser:
             return True
         elif data in b'FfNn':
             return False
-        elif data in b'? ':
+        elif data in b'? \0':
             return None
         else:
             # Todo: return something? (But that would be misleading!)
@@ -166,7 +167,7 @@ class FieldParser:
         Returns int, float or None if the field is empty.
         """
         # In some files * is used for padding.
-        data = data.strip().strip(b'*')
+        data = data.strip().strip(b'*\0')
 
         try:
             return int(data)
@@ -217,13 +218,13 @@ class FieldParser:
             day, msec = struct.unpack('<LL', data)
             if day:
                 dt = datetime.datetime.fromordinal(day - offset)
-                delta = datetime.timedelta(seconds=msec/1000)
+                delta = datetime.timedelta(seconds=msec / 1000)
                 return dt + delta
             else:
                 return None
         else:
             return None
-            
+
     def parseY(self, field, data):
         """Parse currency field (Y) and return decimal.Decimal.
 
@@ -233,7 +234,6 @@ class FieldParser:
 
         # Currency fields are stored with 4 points of precision
         return Decimal(value) / 10000
-
 
     def parseB(self, field, data):
         """Binary memo field or double precision floating point number
@@ -258,7 +258,6 @@ class FieldParser:
 
         The raw data is returned as a binary string."""
         return self.get_memo(self._parse_memo_index(data))
-
 
     # Autoincrement field ('+')
     parse2B = parseI

@@ -4,15 +4,24 @@ Class to read DBF files.
 import os
 import sys
 import datetime
+import platform
 import collections
 
 from .ifiles import ifind
 from .struct_parser import StructParser
 from .field_parser import FieldParser
-from .memo import find_memofile, open_memofile, FakeMemoFile, BinaryMemo
+from .memo import find_memofile, open_memofile, FakeMemoFile
 from .codepages import guess_encoding
 from .dbversions import get_dbversion_string
-from .exceptions import *
+from .exceptions import DBFNotFound, MissingMemoFile
+
+_py_version = (sys.version_info.major, sys.version_info.minor)
+_py_impl = platform.python_implementation()
+if _py_version >= (3, 7) or (_py_version == (3, 6) and _py_impl == 'CPython'):
+    ORDERED_DICT = dict
+else:
+    ORDERED_DICT = collections.OrderedDict
+
 
 DBFHeader = StructParser(
     'DBFHeader',
@@ -55,7 +64,7 @@ DBFField = StructParser(
 
 def expand_year(year):
     """Convert 2-digit year to 4-digit year."""
-    
+
     if year < 80:
         return 2000 + year
     else:
@@ -69,7 +78,7 @@ class RecordIterator(object):
 
     def __iter__(self):
         return self._table._iter_records(self._record_type)
- 
+
     def __len__(self):
         return self._table._count_records(self._record_type)
 
@@ -79,7 +88,7 @@ class DBF(object):
     def __init__(self, filename, encoding=None, ignorecase=True,
                  lowernames=False,
                  parserclass=FieldParser,
-                 recfactory=collections.OrderedDict,
+                 recfactory=ORDERED_DICT,
                  load=False,
                  raw=False,
                  ignore_missing_memofile=False,
@@ -121,7 +130,7 @@ class DBF(object):
             self._read_header(infile)
             self._read_field_headers(infile)
             self._check_headers()
-            
+
             try:
                 self.date = datetime.date(expand_year(self.header.year),
                                           self.header.month,
@@ -129,7 +138,7 @@ class DBF(object):
             except ValueError:
                 # Invalid date or '\x00\x00\x00'.
                 self.date = None
- 
+
         self.memofilename = self._get_memofilename()
 
         if load:
@@ -208,7 +217,7 @@ class DBF(object):
         if self.encoding is None:
             try:
                 self.encoding = guess_encoding(self.header.language_driver)
-            except LookupError as err:
+            except LookupError:
                 self.encoding = 'ascii'
 
     def _decode_text(self, data):
@@ -295,7 +304,10 @@ class DBF(object):
             # Skip to first record.
             infile.seek(self.header.headerlen, 0)
 
-            if not self.raw:
+            if self.raw:
+                def parse(_, data):
+                    return data
+            else:
                 field_parser = self.parserclass(self, memofile)
                 parse = field_parser.parse
 
@@ -307,14 +319,10 @@ class DBF(object):
                 sep = read(1)
 
                 if sep == record_type:
-                    if self.raw:
-                        items = [(field.name, read(field.length)) \
-                                 for field in self.fields]
-                    else:
-                        items = [(field.name,
-                                  parse(field, read(field.length))) \
-                                 for field in self.fields]
-
+                    items = [
+                        (field.name, parse(field, read(field.length)))
+                        for field in self.fields
+                    ]
                     yield self.recfactory(items)
 
                 elif sep in (b'\x1a', b''):

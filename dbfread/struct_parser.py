@@ -5,12 +5,12 @@ The struct can be read from a file or a byte string.
 """
 
 import struct
-import collections
 
 
 def _make_struct_class(name, names):
     class Struct(object):
         _names = names
+
         def __init__(self, **kwargs):
             vars(self).update(kwargs)
 

@@ -8,10 +8,8 @@ VFP == Visual FoxPro
 DB3 == dBase III
 DB4 == dBase IV
 """
-from collections import namedtuple
 from .ifiles import ifind
 from .struct_parser import StructParser
-
 
 
 VFPFileHeader = StructParser(
@@ -34,19 +32,23 @@ DB4MemoHeader = StructParser(
     ['reserved',  # Always 0xff 0xff 0x08 0x08.
      'length'])
 
-# Used for Visual FoxPro memos to distinguish binary from text memos.
 
 class VFPMemo(bytes):
     pass
 
+
+# Used for Visual FoxPro memos to distinguish binary from text memos.
 class BinaryMemo(VFPMemo):
     pass
+
 
 class PictureMemo(BinaryMemo):
     pass
 
+
 class ObjectMemo(BinaryMemo):
     pass
+
 
 class TextMemo(VFPMemo):
     pass
@@ -78,7 +80,7 @@ class MemoFile(object):
         self.file.close()
 
     def __getitem__(self, index):
-        raise NotImplemented
+        raise NotImplementedError
 
     def __enter__(self):
         return self
@@ -113,7 +115,7 @@ class VFPMemoFile(MemoFile):
         data = self._read(memo_header.length)
         if len(data) != memo_header.length:
             raise IOError('EOF reached while reading memo')
-        
+
         return VFP_TYPE_MAP.get(memo_header.type, BinaryMemo)(data)
 
 
@@ -143,7 +145,9 @@ class DB3MemoFile(MemoFile):
             # \x1a\x1a
             # \x0d\x0a
 
-        return data[:eom]        
+        # TODO: this is never reached. Whey is it here?
+        # return data[:eom]
+
 
 class DB4MemoFile(MemoFile):
     """dBase IV memo file"""
