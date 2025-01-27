@@ -64,7 +64,7 @@ def expand_year(year: int) -> int:
 
 class RecordIterator:
     """Iterator for DBF records."""
-    
+
     def __init__(self, table: "DBF", record_type: bytes) -> None:
         self._record_type = record_type
         self._table = table
