@@ -20,7 +20,15 @@ DBVERSION_STRINGS: dict[int, str]    = {
 }
 
 
-def get_dbversion_string(dbversion):
+def get_dbversion_string(dbversion: int) -> str:
+    """Get the string description of a DBF version number.
+    
+    Args:
+        dbversion: The DBF version number as an integer.
+        
+    Returns:
+        A string describing the DBF version, or 'Unknown (0xXX)' if version is not recognized.
+    """
     try:
         return DBVERSION_STRINGS[dbversion]
     except KeyError:
