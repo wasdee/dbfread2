@@ -1,54 +1,45 @@
 """
 Parser for DBF fields.
 """
+from __future__ import annotations
+
 import datetime
 import struct
-import sys
+from collections.abc import Callable
 from decimal import Decimal
+from typing import Any
 
 from .memo import BinaryMemo
 
-PY2 = sys.version_info[0] == 2
-
-if PY2:
-    decode_text = unicode  # noqa: F821
-else:
-    decode_text = str
-
 
 class InvalidValue(bytes):
-    def __repr__(self):
+    def __repr__(self) -> str:
         text = bytes.__repr__(self)
-        if PY2:
-            # Make sure the string starts with "b'" in
-            # "InvalidValue(b'value here')".
-            text = 'b' + text
-
         return f'InvalidValue({text})'
 
 
 class FieldParser:
-    def __init__(self, table, memofile=None):
+    def __init__(self, table: Any, memofile: Any | None = None) -> None:
         """Create a new field parser
 
-        encoding is the character encoding to use when parsing
-        strings."""
+        encoding is the character encoding to use when parsing strings.
+        """
         self.table = table
         self.dbversion = self.table.header.dbversion
         self.encoding = table.encoding
         self.char_decode_errors = table.char_decode_errors
-        self._lookup = self._create_lookup_table()
+        self._lookup: dict[str, Callable] = self._create_lookup_table()
         if memofile:
             self.get_memo = memofile.__getitem__
         else:
             self.get_memo = lambda x: None
 
-    def decode_text(self, text):
-        return decode_text(text, self.encoding, errors=self.char_decode_errors)
+    def decode_text(self, text: bytes) -> str:
+        return str(text, self.encoding, errors=self.char_decode_errors)
 
-    def _create_lookup_table(self):
+    def _create_lookup_table(self) -> dict[str, Callable]:
         """Create a lookup table for field types."""
-        lookup = {}
+        lookup: dict[str, Callable] = {}
 
         for name in dir(self):
             if name.startswith('parse'):
@@ -63,7 +54,7 @@ class FieldParser:
 
         return lookup
 
-    def field_type_supported(self, field_type):
+    def field_type_supported(self, field_type: str) -> bool:
         """Checks if the field_type is supported by the parser
 
         field_type should be a one-character string like 'C' and 'N'.
@@ -71,7 +62,7 @@ class FieldParser:
         """
         return field_type in self._lookup
 
-    def parse(self, field, data):
+    def parse(self, field: Any, data: bytes) -> Any:
         """Parse field and return value"""
         try:
             func = self._lookup[field.type]
@@ -80,15 +71,15 @@ class FieldParser:
         else:
             return func(field, data)
 
-    def parse0(self, field, data):
+    def parse0(self, field: Any, data: bytes) -> bytes:
         """Parse flags field and return as byte string"""
         return data
 
-    def parseC(self, field, data):
+    def parseC(self, field: Any, data: bytes) -> str:
         """Parse char field and return unicode string"""
         return self.decode_text(data.rstrip(b'\0 '))
 
-    def parseD(self, field, data):
+    def parseD(self, field: Any, data: bytes) -> datetime.date | None:
         """Parse date field and return datetime.date or None"""
         try:
             return datetime.date(int(data[:4]), int(data[4:6]), int(data[6:8]))
@@ -100,7 +91,7 @@ class FieldParser:
             else:
                 raise ValueError(f'invalid date {data!r}') from e
 
-    def parseF(self, field, data):
+    def parseF(self, field: Any, data: bytes) -> float | None:
         """Parse float field and return float or None"""
         # In some files * is used for padding.
         data = data.strip().strip(b'*')
@@ -110,12 +101,11 @@ class FieldParser:
         else:
             return None
 
-    def parseI(self, field, data):
+    def parseI(self, field: Any, data: bytes) -> int:
         """Parse integer or autoincrement field and return int."""
-        # Todo: is this 4 bytes on every platform?
         return struct.unpack('<i', data)[0]
 
-    def parseL(self, field, data):
+    def parseL(self, field: Any, data: bytes) -> bool | None:
         """Parse logical field and return True, False or None"""
         if data in b'TtYy':
             return True
@@ -124,11 +114,10 @@ class FieldParser:
         elif data in b'? \0':
             return None
         else:
-            # Todo: return something? (But that would be misleading!)
             message = 'Illegal value for logical field: {!r}'
             raise ValueError(message.format(data))
 
-    def _parse_memo_index(self, data):
+    def _parse_memo_index(self, data: bytes) -> int:
         if len(data) == 4:
             return struct.unpack('<I', data)[0]
         else:
@@ -141,7 +130,7 @@ class FieldParser:
                     raise ValueError(
                         f'Memo index is not an integer: {data!r}') from e
 
-    def parseM(self, field, data):
+    def parseM(self, field: Any, data: bytes) -> str | BinaryMemo | None:
         """Parse memo field (M, G, B or P)
 
         Returns memo index (an integer), which can be used to look up
@@ -157,7 +146,7 @@ class FieldParser:
         else:
             return self.decode_text(memo)
 
-    def parseN(self, field, data):
+    def parseN(self, field: Any, data: bytes) -> int | float | None:
         """Parse numeric field (N)
 
         Returns int, float or None if the field is empty.
@@ -174,11 +163,11 @@ class FieldParser:
                 # Account for , in numeric fields
                 return float(data.replace(b',', b'.'))
 
-    def parseO(self, field, data):
+    def parseO(self, field: Any, data: bytes) -> float:
         """Parse long field (O) and return float."""
         return struct.unpack('d', data)[0]
 
-    def parseT(self, field, data):
+    def parseT(self, field: Any, data: bytes) -> datetime.datetime | None:
         """Parse time field (T)
 
         Returns datetime.datetime or None"""
@@ -202,7 +191,6 @@ class FieldParser:
             # I've seen data where the day number is 0 and
             # msec is 2 or 4. I think we can safely return None for those.
             # (At least I hope so.)
-            #
             day, msec = struct.unpack('<LL', data)
             if day:
                 dt = datetime.datetime.fromordinal(day - offset)
@@ -213,7 +201,7 @@ class FieldParser:
         else:
             return None
 
-    def parseY(self, field, data):
+    def parseY(self, field: Any, data: bytes) -> Decimal:
         """Parse currency field (Y) and return decimal.Decimal.
 
         The field is encoded as a 8-byte little endian integer
@@ -223,7 +211,7 @@ class FieldParser:
         # Currency fields are stored with 4 points of precision
         return Decimal(value) / 10000
 
-    def parseB(self, field, data):
+    def parseB(self, field: Any, data: bytes) -> float | Any:
         """Binary memo field or double precision floating point number
 
         dBase uses B to represent a memo index (10 bytes), while
@@ -235,13 +223,13 @@ class FieldParser:
         else:
             return self.get_memo(self._parse_memo_index(data))
 
-    def parseG(self, field, data):
+    def parseG(self, field: Any, data: bytes) -> Any:
         """OLE Object stored in memofile.
 
         The raw data is returned as a binary string."""
         return self.get_memo(self._parse_memo_index(data))
 
-    def parseP(self, field, data):
+    def parseP(self, field: Any, data: bytes) -> Any:
         """Picture stored in memofile.
 
         The raw data is returned as a binary string."""
