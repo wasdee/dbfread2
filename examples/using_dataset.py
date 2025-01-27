@@ -4,6 +4,7 @@ Convert a DBF file to an SQLite table.
 Requires dataset: https://dataset.readthedocs.io/
 """
 import dataset
+
 from dbfread2 import DBF
 
 # Change to "dataset.connect('people.sqlite')" if you want a file.
