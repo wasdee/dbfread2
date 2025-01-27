@@ -13,13 +13,20 @@ Full documentation at https://dbfread.readthedocs.io/
 
 """
 from importlib.metadata import version
+from typing import Final
 
-__version__ = version("dbfread2")
+__version__: Final[str] = version("dbfread2")
 
-from .dbf import DBF  # noqa: F401
-from .deprecated_dbf import open, read  # noqa: F401
-from .exceptions import DBFNotFoundError, MissingMemoFileError  # noqa: F401
-from .field_parser import FieldParser, InvalidValue  # noqa: F401
+from .dbf import DBF
+from .exceptions import DBFNotFoundError, MissingMemoFileError
+from .field_parser import FieldParser, InvalidValue
 
 # Prevent star import.
-__all__ = []
+__all__: Final[list[str]] = [
+    "DBF",
+    "DBFNotFoundError",
+    "FieldParser",
+    "InvalidValue",
+    "MissingMemoFileError",
+    "__version__",
+]
