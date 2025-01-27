@@ -1,13 +1,18 @@
 """
 Reads data from FPT (memo) files.
 
-FPT files are used to varying lenght text or binary data which is too
+FPT files are used to store varying length text or binary data which is too
 large to fit in a DBF field.
 
 VFP == Visual FoxPro
 DB3 == dBase III
 DB4 == dBase IV
 """
+from __future__ import annotations
+
+from pathlib import Path
+from typing import BinaryIO
+
 from .ifiles import ifind
 from .struct_parser import StructParser
 
@@ -33,27 +38,31 @@ DB4MemoHeader = StructParser(
 
 
 class VFPMemo(bytes):
+    """Base class for VFP memo fields."""
     pass
 
 
-# Used for Visual FoxPro memos to distinguish binary from text memos.
 class BinaryMemo(VFPMemo):
+    """Binary memo field."""
     pass
 
 
 class PictureMemo(BinaryMemo):
+    """Picture memo field."""
     pass
 
 
 class ObjectMemo(BinaryMemo):
+    """Object memo field."""
     pass
 
 
 class TextMemo(VFPMemo):
+    """Text memo field."""
     pass
 
 
-VFP_TYPE_MAP = {
+VFP_TYPE_MAP: dict[int, type[VFPMemo]] = {
     0x0: PictureMemo,
     0x1: TextMemo,
     0x2: ObjectMemo,
@@ -61,49 +70,60 @@ VFP_TYPE_MAP = {
 
 
 class MemoFile:
-    def __init__(self, filename):
-        self.filename = filename
+    """Base class for memo file handlers."""
+
+    def __init__(self, filename: str | Path) -> None:
+        self.filename: str | Path = filename
+        self.file: BinaryIO
         self._open()
         self._init()
 
-    def _init(self):
+    def _init(self) -> None:
+        """Initialize memo file specific attributes."""
         pass
 
-    def _open(self):
+    def _open(self) -> None:
+        """Open the memo file for reading."""
         self.file = open(self.filename, 'rb')
-        # Shortcuts for speed.
+        # Shortcuts for speed
         self._read = self.file.read
         self._seek = self.file.seek
 
-    def _close(self):
+    def _close(self) -> None:
+        """Close the memo file."""
         self.file.close()
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> bytes | None:
+        """Get memo data at the specified index."""
         raise NotImplementedError
 
-    def __enter__(self):
+    def __enter__(self) -> MemoFile:
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type_, value, traceback) -> bool:
         self._close()
         return False
 
 
 class FakeMemoFile(MemoFile):
-    def __getitem__(self, i):
+    """A memo file that always returns None, used when no memo file exists."""
+
+    def __getitem__(self, i: int) -> None:
         return None
 
-    def _open(self):
+    def _open(self) -> None:
         pass
 
     _init = _close = _open
 
 
 class VFPMemoFile(MemoFile):
-    def _init(self):
+    """Visual FoxPro memo file handler."""
+
+    def _init(self) -> None:
         self.header = VFPFileHeader.read(self.file)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> VFPMemo | None:
         """Get a memo from the file."""
         if index <= 0:
             return None
@@ -119,54 +139,46 @@ class VFPMemoFile(MemoFile):
 
 
 class DB3MemoFile(MemoFile):
-    """dBase III memo file."""
-    # Code from dbf.py
-    def __getitem__(self, index):
+    """dBase III memo file handler."""
+
+    def __getitem__(self, index: int) -> bytes | None:
+        """Get a memo from the file."""
         if index <= 0:
             return None
 
         block_size = 512
         self._seek(index * block_size)
         data = b''
+
         while True:
             newdata = self._read(block_size)
             if not newdata:
                 return data
             data += newdata
 
-            # Todo: some files (help.dbt) has only one field separator.
-            # Is this enough for all file though?
+            # Find end of memo marker
             end_of_memo = data.find(b'\x1a')
             if end_of_memo != -1:
                 return data[:end_of_memo]
 
-            # Alternative end of memo markers:
-            # \x1a\x1a
-            # \x0d\x0a
-
-        # TODO: this is never reached. Whey is it here?
-        # return data[:eom]
-
 
 class DB4MemoFile(MemoFile):
-    """dBase IV memo file"""
-    def __getitem__(self, index):
+    """dBase IV memo file handler."""
+
+    def __getitem__(self, index: int) -> bytes | None:
+        """Get a memo from the file."""
         if index <= 0:
             return None
 
-        # Todo: read this from the file header.
         block_size = 512
-
         self._seek(index * block_size)
         memo_header = DB4MemoHeader.read(self.file)
         data = self._read(memo_header.length)
-        # Todo: fields are terminated in different ways.
-        # \x1a is one of them
-        # \x1f seems to be another (dbase_8b.dbt)
         return data.split(b'\x1f', 1)[0]
 
 
-def find_memofile(dbf_filename):
+def find_memofile(dbf_filename: str | Path) -> str | Path | None:
+    """Find the corresponding memo file for a DBF file."""
     for ext in ['.fpt', '.dbt']:
         name = ifind(dbf_filename, ext=ext)
         if name:
@@ -174,10 +186,10 @@ def find_memofile(dbf_filename):
     return None
 
 
-def open_memofile(filename, dbversion):
-    if filename.lower().endswith('.fpt'):
+def open_memofile(filename: str | Path, dbversion: int) -> MemoFile:
+    """Open a memo file based on the file extension and DBF version."""
+    if str(filename).lower().endswith('.fpt'):
         return VFPMemoFile(filename)
-    # print('######', dbversion)
     elif dbversion == 0x83:
         return DB3MemoFile(filename)
     else:
