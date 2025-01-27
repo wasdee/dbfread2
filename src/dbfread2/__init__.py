@@ -12,16 +12,16 @@ Example:
 Full documentation at https://dbfread.readthedocs.io/
 
 """
-__author__ = 'Ole Martin Bjorndalen'
-__email__ = 'ombdalen@gmail.com'
-__url__ = 'https://dbfread.readthedocs.io/'
-__license__ = 'MIT'
+from importlib.metadata import version
+
+__version__ = version("dbfread2")
 
 from .dbf import DBF
 from .deprecated_dbf import open, read
 from .exceptions import DBFNotFound, MissingMemoFile
 from .field_parser import FieldParser, InvalidValue
-from .version import version_info, version as __version__
+from .version import version as __version__
+from .version import version_info
 
 # Prevent star import.
 __all__ = []
