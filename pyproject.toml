@@ -1,24 +1,65 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dbfread2"
+version = "0.1.0"
+authors = [{ name = "Nutchanon Ninyawee", email = "me@nutchanon.org" }]
+description = "Read DBF Files with Python"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[project.urls]
+Homepage = "https://github.com/wasdee/dbfread2"
+Documentation = "https://dbfread2.readthedocs.io/"
+
 [tool.ruff]
-line-length = 88
 target-version = "py312"
+line-length = 88
+select = ["E", "F", "I", "N", "W", "B", "UP", "PL", "RUF"]
 
-[tool.ruff.lint]
-select = ["E", "F", "W"]
-ignore = ["F401", "C901", "F901"]
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
 
-# [tool.ruff.lint.per-file-ignores]
-# "__init__.py" = ["F401"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbfread2"]
 
-[tool.ruff.lint.mccabe]
-max-complexity = 10
+[dependency-groups]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.5.50",
+    "mkdocstrings[python]>=0.27.0",
+]
+dev = [
+    "pytest>=8.3.4",
+]
 
-# [tool.ruff.lint.extend-exclude]
-# # Exclude a variety of commonly ignored directories.
-# exclude = [
-#     ".git",
-#     "__pycache__",
-#     "docs/source/conf.py",
-#     "old",
-#     "build",
-#     "dist",
-# ]
+[project.optional-dependencies]
+docs = [
+    "mkdocs>=1.5.3",
+    "mkdocs-material>=9.5.3",
+    "mkdocstrings[python]>=0.24.0",
+]
