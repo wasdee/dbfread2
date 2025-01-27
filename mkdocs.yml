@@ -1,0 +1,53 @@
+site_name: dbfread2
+site_description: Read DBF Files with Python
+site_author: Nutchanon Ninyawee
+repo_url: https://github.com/nutchanon-pwo/dbfread2
+repo_name: nutchanon-pwo/dbfread2
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: installing.md
+      - Introduction: introduction.md
+  - User Guide:
+      - Exporting Data: exporting_data.md
+      - DBF Objects: dbf_objects.md
+      - Field Types: field_types.md
+  - Reference:
+      - API Changes: api_changes.md
+      - Resources: resources.md
+  - Project:
+      - Changelog: changes.md
+      - License: license.md
+      - Acknowledgements: acknowledgements.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true

@@ -1,0 +1,12 @@
+[tasks]
+# Build documentation
+"docs:build" = "mkdocs build"
+
+# Build and serve documentation (one-time)
+"docs:serve" = "mkdocs build && mkdocs serve"
+
+# Watch and serve documentation (auto-rebuild)
+"docs:watch" = "mkdocs serve"
+
+# Check documentation for broken links and warnings
+"docs:check" = "mkdocs build --strict"

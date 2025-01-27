@@ -1,4 +1,4 @@
-# dbfread - Read DBF Files with Python
+# dbfread2 - Read DBF Files with Python
 
 DBF is a file format used by databases such dBase, Visual FoxPro, and
 FoxBase+. This library reads DBF files and returns the data as native
@@ -6,105 +6,102 @@ Python data types for further processing. It is primarily intended for
 batch jobs and one-off scripts.
 
 ```python
->>> from dbfread import DBF
->>> for record in DBF('people.dbf'):
-...     print(record)
-{'NAME': 'Alice', 'BIRTHDATE': datetime.date(1987, 3, 1)}
-{'NAME': 'Bob', 'BIRTHDATE': datetime.date(1980, 11, 12)}
-```
+from dbfread2 import DBF
 
-In older versions where dictionaries are not ordered you will instead get a
-`collections.OrderedDict`:
-
-```python
->>> for record in DBF('people.dbf'):
-...     print(record)
-OrderedDict([('NAME', 'Alice'), ('BIRTHDATE', datetime.date(1987, 3, 1))])
-OrderedDict([('NAME', 'Bob'), ('BIRTHDATE', datetime.date(1980, 11, 12))])
+for record in DBF('people.dbf'):
+    print(record)
+# {'NAME': 'Alice', 'BIRTHDATE': datetime.date(1987, 3, 1)}
+# {'NAME': 'Bob', 'BIRTHDATE': datetime.date(1980, 11, 12)}
 ```
 
 By default records are streamed directly from the file. If you have
-enough memory you can instead load them into a list. This allows for
-random access:
-
-```python
->>> table = DBF('people.dbf', load=True)
->>> print(table.records[1]['NAME'])
-Bob
->>> print(table.records[0]['NAME'])
-Alice
-```
-
-Full documentation at https://dbfread.readthedocs.io/
-
-See docs/changes.rst for a full list of changes in each version.
-
-## Main Features
-
-- Written for Python 3.6, but also works in 2.7
-- Simple but flexible API
-- Data is returned as native Python data types
-- Records are ordered dictionaries, but can be reconfigured to be of any type
-- Aims to handle all variants of DBF files (Currently only widely tested with Visual FoxPro, but should work well with other variants)
-- Support for 18 field types. Custom types can be added by subclassing `FieldParser`
-- Reads `FPT` and `DBT` memo files, both text and binary data
-- Handles mixed case file names gracefully on case sensitive file systems
-- Can retrieve deleted records
-
-## Installing
-
-Requires Python 3.6 or 2.7.
-
-```
-pip install dbfread
-```
-
-`dbfread` is a pure Python module and doesn't depend on any packages
-outside the standard library.
-
-To build documentation locally:
-
-```
-python setup.py docs
-```
-
-This requires Sphinx. The resulting files can be found in
-`docs/_build/`.
-
-## Source code
-
-http://github.com/olemb/dbfread/
-
-## API Changes
-
-`dbfread.open()` and `dbfread.read()` are deprecated as of version
-`2.0`, and will be removed in `2.2`.
-
-The `DBF` class is no longer a subclass of `list`. This makes the
-API a lot cleaner and easier to understand, but old code that relied
-on this behaviour will be broken. Iteration and record counting works
-the same as before. Other list operations can be rewritten using the
-`record` attribute. For example:
-
-```python
-table = dbfread.read('people.dbf')
-print(table[1])
-```
-
-can be rewritten as:
+enough memory you can instead load them into a list for random access:
 
 ```python
 table = DBF('people.dbf', load=True)
-print(table.records[1])
+print(table.records[1]['NAME'])  # Returns: 'Bob'
+print(table.records[0]['NAME'])  # Returns: 'Alice'
 ```
 
-`open()` and `read()` both return `DeprecatedDBF`, which is a
-subclass of `DBF` and `list` and thus backward compatible.
+Full documentation at https://wasdee.github.io/dbfread2/
+
+## Main Features
+
+- Modern Python 3.12+ implementation
+- Type hints throughout the codebase
+- Simple but flexible API
+- Data returned as native Python types
+- Support for `pathlib.Path` in all file operations
+- Records as dictionaries (customizable with record factories)
+- Support for all major DBF variants
+- 18 field types with extensible `FieldParser`
+- Reads `FPT` and `DBT` memo files (text and binary)
+- Case-insensitive file handling
+- Access to deleted records
+
+## Installation
+
+Requires Python 3.12 or later.
+
+```bash
+pip install dbfread2
+```
+
+`dbfread2` is a pure Python module with no external runtime dependencies.
+
+## Development
+
+### Setup
+
+We use [mise-en-place](https://mise.jdx.dev/) for development environment management:
+
+1. Install mise-en-place
+2. Clone and setup:
+
+   ```bash
+   git clone https://github.com/wasdee/dbfread2.git
+   cd dbfread2
+   mise install
+   ```
+
+3. Install dependencies with [uv](https://github.com/astral-sh/uv):
+   ```bash
+   uv pip install -e ".[docs]"
+   ```
+
+### Documentation
+
+Documentation tasks are managed through mise:
+
+```bash
+# Build docs
+mise run docs:build
+
+# Serve docs locally (one-time)
+mise run docs:serve
+
+# Watch mode with auto-rebuild (recommended for development)
+mise run docs:watch
+
+# Check for documentation issues
+mise run docs:check
+```
+
+### Code Quality
+
+We use modern Python tools:
+
+- [ruff](https://github.com/astral-sh/ruff) for linting and formatting
+- [mypy](https://mypy-lang.org/) for static type checking
 
 ## License
 
-dbfread is released under the terms of the [MIT license](http://en.wikipedia.org/wiki/MIT_License).
+dbfread2 is released under the MIT license.
+
+## Credits
+
+This is a fork of [dbfread](https://github.com/olemb/dbfread) by Ole Martin Bjørndalen.
 
 ## Contact
 
-Ole Martin Bjorndalen - ombdalen@gmail.com
+Nutchanon Ninyawee - me@nutchanon.org
