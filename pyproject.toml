@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["F401", "C901", "F901"]
+
+# [tool.ruff.lint.per-file-ignores]
+# "__init__.py" = ["F401"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+# [tool.ruff.lint.extend-exclude]
+# # Exclude a variety of commonly ignored directories.
+# exclude = [
+#     ".git",
+#     "__pycache__",
+#     "docs/source/conf.py",
+#     "old",
+#     "build",
+#     "dist",
+# ]
