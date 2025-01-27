@@ -1,4 +1,12 @@
+"""Codepage mapping and encoding utilities for DBF files.
+
+This module provides mapping between DBF language driver codes and their corresponding
+encodings, along with utilities to determine the appropriate text encoding.
+"""
+
+
 # Table from dbf.py by Ethan Furman
+# Maps DBF language driver codes to (encoding, description) tuples
 codepages: dict[int, tuple[str, str]] = {
     0x00: ('ascii', "plain ol' ascii"),
     0x01: ('cp437', 'U.S. MS-DOS'),
@@ -68,9 +76,20 @@ codepages: dict[int, tuple[str, str]] = {
 
 
 def guess_encoding(language_driver: int) -> str:
-    if language_driver in codepages:
+    """Determine the text encoding based on the DBF language driver code.
+
+    Args:
+        language_driver: The language driver byte from the DBF header.
+
+    Returns:
+        str: The Python encoding name (e.g. 'cp437', 'utf-8').
+
+    Raises:
+        LookupError: If the language driver code is not recognized.
+    """
+    try:
         return codepages[language_driver][0]
-    else:
-        raise LookupError('Unable to guess encoding '
-                          'for languager driver byte '
-                          f'0x{language_driver:x}')
+    except KeyError:
+        raise LookupError(
+            f'Unknown language driver code: 0x{language_driver:02x}'
+        ) from None
