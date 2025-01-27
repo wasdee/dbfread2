@@ -1,0 +1,17 @@
+On the mission to recreate the `dbfread` library to `dbfread2`.
+New author: Nutchanon Ninyawee me@nutchanon.org [GitHub](https://github.com/wasdee/)
+
+# Rules
+
+- Use `py312` as the target version.
+- Use `ruff` as the linter and formatter.
+- Use `mypy` as the static type checker.
+
+# DX
+
+- support `pathlib.Path` for all file operations
+
+# Development
+
+- use `mise-en-place` to manage Python versions and packages
+- use `uv` instead of `pip` 100% of the time
