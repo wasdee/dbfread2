@@ -1,6 +1,11 @@
 On the mission to recreate the `dbfread` library to `dbfread2`.
 New author: Nutchanon Ninyawee me@nutchanon.org [GitHub](https://github.com/wasdee/)
 
+# Actions
+
+- Please keep adding missing type annotations.
+- Remove all version guard code where it is not needed since we are using Python 3.12+.
+
 # Rules
 
 - Use `py312` as the target version.

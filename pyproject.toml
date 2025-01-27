@@ -28,6 +28,16 @@ Documentation = "https://dbfread2.readthedocs.io/"
 target-version = "py312"
 line-length = 88
 select = ["E", "F", "I", "N", "W", "B", "UP", "PL", "RUF"]
+ignore = ["PLR2004", "N802"]
+
+# pyupgrade settings
+fix = true # Enable autofix behavior
+
+# [tool.ruff.up]
+# # Skip async/await rewrite suggestions
+# skip-async = false
+# # Keep runtime typing imports
+# keep-runtime-typing = true
 
 [tool.mypy]
 python_version = "3.12"
@@ -53,9 +63,7 @@ docs = [
     "mkdocs-material>=9.5.50",
     "mkdocstrings[python]>=0.27.0",
 ]
-dev = [
-    "pytest>=8.3.4",
-]
+dev = ["pytest>=8.3.4"]
 
 [project.optional-dependencies]
 docs = [

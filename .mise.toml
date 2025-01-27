@@ -10,3 +10,6 @@
 
 # Check documentation for broken links and warnings
 "docs:check" = "mkdocs build --strict"
+
+lint = "uvx ruff check"
+format = "uvx ruff format"
