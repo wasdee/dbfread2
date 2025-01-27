@@ -11,7 +11,6 @@ DB4 == dBase IV
 from .ifiles import ifind
 from .struct_parser import StructParser
 
-
 VFPFileHeader = StructParser(
     'FPTHeader',
     '>LHH504s',
@@ -61,7 +60,7 @@ VFP_TYPE_MAP = {
 }
 
 
-class MemoFile(object):
+class MemoFile:
     def __init__(self, filename):
         self.filename = filename
         self._open()
@@ -114,7 +113,7 @@ class VFPMemoFile(MemoFile):
 
         data = self._read(memo_header.length)
         if len(data) != memo_header.length:
-            raise IOError('EOF reached while reading memo')
+            raise OSError('EOF reached while reading memo')
 
         return VFP_TYPE_MAP.get(memo_header.type, BinaryMemo)(data)
 
@@ -172,16 +171,14 @@ def find_memofile(dbf_filename):
         name = ifind(dbf_filename, ext=ext)
         if name:
             return name
-    else:
-        return None
+    return None
 
 
 def open_memofile(filename, dbversion):
     if filename.lower().endswith('.fpt'):
         return VFPMemoFile(filename)
+    # print('######', dbversion)
+    elif dbversion == 0x83:
+        return DB3MemoFile(filename)
     else:
-        # print('######', dbversion)
-        if dbversion == 0x83:
-            return DB3MemoFile(filename)
-        else:
-            return DB4MemoFile(filename)
+        return DB4MemoFile(filename)

@@ -3,7 +3,7 @@ Read DBF files with Python.
 
 Example:
 
-    >>> from dbfread import DBF
+    >>> from dbfread2 import DBF
     >>> for record in DBF('people.dbf'):
     ...     print(record)
     {'NAME': 'Alice', 'BIRTHDATE': datetime.date(1987, 3, 1)}
@@ -16,12 +16,10 @@ from importlib.metadata import version
 
 __version__ = version("dbfread2")
 
-from .dbf import DBF
-from .deprecated_dbf import open, read
-from .exceptions import DBFNotFound, MissingMemoFile
-from .field_parser import FieldParser, InvalidValue
-from .version import version as __version__
-from .version import version_info
+from .dbf import DBF  # noqa: F401
+from .deprecated_dbf import open, read  # noqa: F401
+from .exceptions import DBFNotFoundError, MissingMemoFileError  # noqa: F401
+from .field_parser import FieldParser, InvalidValue  # noqa: F401
 
 # Prevent star import.
 __all__ = []

@@ -1,27 +1,19 @@
 """
 Class to read DBF files.
 """
-import os
-import sys
-import datetime
-import platform
-import collections
+from collections.abc import Callable
+from datetime import date
+from os import PathLike
+from pathlib import Path
+from typing import Any
 
-from .ifiles import ifind
-from .struct_parser import StructParser
-from .field_parser import FieldParser
-from .memo import find_memofile, open_memofile, FakeMemoFile
 from .codepages import guess_encoding
 from .dbversions import get_dbversion_string
-from .exceptions import DBFNotFound, MissingMemoFile
-
-_py_version = (sys.version_info.major, sys.version_info.minor)
-_py_impl = platform.python_implementation()
-if _py_version >= (3, 7) or (_py_version == (3, 6) and _py_impl == 'CPython'):
-    ORDERED_DICT = dict
-else:
-    ORDERED_DICT = collections.OrderedDict
-
+from .exceptions import DBFNotFoundError, MissingMemoFileError
+from .field_parser import FieldParser
+from .ifiles import ifind
+from .memo import FakeMemoFile, find_memofile, open_memofile
+from .struct_parser import StructParser
 
 DBFHeader = StructParser(
     'DBFHeader',
@@ -62,69 +54,88 @@ DBFField = StructParser(
      ])
 
 
-def expand_year(year):
+def expand_year(year: int) -> int:
     """Convert 2-digit year to 4-digit year."""
-
     if year < 80:
         return 2000 + year
     else:
         return 1900 + year
 
 
-class RecordIterator(object):
-    def __init__(self, table, record_type):
+class RecordIterator:
+    """Iterator for DBF records."""
+    
+    def __init__(self, table: "DBF", record_type: bytes) -> None:
         self._record_type = record_type
         self._table = table
 
-    def __iter__(self):
+    def __iter__(self) -> Any:  # Returns iterator of records
         return self._table._iter_records(self._record_type)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._table._count_records(self._record_type)
 
 
-class DBF(object):
+class DBF:
     """DBF table."""
-    def __init__(self, filename, encoding=None, ignorecase=True,
-                 lowernames=False,
-                 parserclass=FieldParser,
-                 recfactory=ORDERED_DICT,
-                 load=False,
-                 raw=False,
-                 ignore_missing_memofile=False,
-                 char_decode_errors='strict'):
 
+    def __init__(  # noqa: PLR0913
+        self,
+        filepath: str | PathLike,
+        encoding: str | None = None,
+        ignore_case: bool = True,
+        lowercase_names: bool = False,
+        parser_class: type = FieldParser,
+        record_factory: Callable | None = None,
+        preload: bool = False,
+        keep_raw: bool = False,
+        ignore_missing_memo: bool = False,
+        char_decode_errors: str = 'strict',
+    ) -> None:
+        """Initialize DBF table reader.
+
+        Args:
+            filepath: Path to the DBF file
+            encoding: Character encoding of the DBF file
+            ignore_case: Whether to ignore case in filename matching
+            lowercase_names: Convert field names to lowercase
+            parser_class: Class to use for parsing fields
+            record_factory: Callable to create record objects (default: dict)
+            preload: Whether to load all records into memory immediately
+            keep_raw: Return raw bytes instead of parsed values
+            ignore_missing_memo: Don't raise error if memo file is missing
+            char_decode_errors: How to handle character decoding errors
+        """
         self.encoding = encoding
-        self.ignorecase = ignorecase
-        self.lowernames = lowernames
-        self.parserclass = parserclass
-        self.raw = raw
-        self.ignore_missing_memofile = ignore_missing_memofile
+        self.ignorecase = ignore_case
+        self.lowernames = lowercase_names
+        self.parserclass = parser_class
+        self.raw = keep_raw
+        self.ignore_missing_memofile = ignore_missing_memo
         self.char_decode_errors = char_decode_errors
 
-        if recfactory is None:
-            self.recfactory = lambda items: items
+        if record_factory is None:
+            self.recfactory = lambda items: dict(items)
         else:
-            self.recfactory = recfactory
+            self.recfactory = record_factory
 
         # Name part before .dbf is the table name
-        self.name = os.path.basename(filename)
-        self.name = os.path.splitext(self.name)[0].lower()
-        self._records = None
-        self._deleted = None
+        self.name = Path(filepath).stem.lower()
+        self._records: list[Any] | None = None
+        self._deleted: list[Any] | None = None
 
-        if ignorecase:
-            self.filename = ifind(filename)
+        if ignore_case:
+            self.filename = ifind(filepath)
             if not self.filename:
-                raise DBFNotFound('could not find file {!r}'.format(filename))
+                raise DBFNotFoundError(f'could not find file {filepath!r}')
         else:
-            self.filename = filename
+            self.filename = filepath
 
         # Filled in by self._read_headers()
-        self.memofilename = None
-        self.header = None
-        self.fields = []       # namedtuples
-        self.field_names = []  # strings
+        self.memofilename: str | None = None
+        self.header: Any = None  # DBFHeader instance
+        self.fields: list[Any] = []  # list of DBFField instances
+        self.field_names: list[str] = []  # list of field names
 
         with open(self.filename, mode='rb') as infile:
             self._read_header(infile)
@@ -132,23 +143,25 @@ class DBF(object):
             self._check_headers()
 
             try:
-                self.date = datetime.date(expand_year(self.header.year),
-                                          self.header.month,
-                                          self.header.day)
+                self.date = date(expand_year(self.header.year),
+                               self.header.month,
+                               self.header.day)
             except ValueError:
                 # Invalid date or '\x00\x00\x00'.
                 self.date = None
 
         self.memofilename = self._get_memofilename()
 
-        if load:
+        if preload:
             self.load()
 
     @property
-    def dbversion(self):
+    def dbversion(self) -> str:
+        """Get the DBF version string."""
         return get_dbversion_string(self.header.dbversion)
 
-    def _get_memofilename(self):
+    def _get_memofilename(self) -> str | None:
+        """Get the memo filename if it exists."""
         # Does the table have a memo field?
         field_types = [field.type for field in self.fields]
         if not set(field_types) & set('MGPB'):
@@ -160,28 +173,26 @@ class DBF(object):
             if self.ignore_missing_memofile:
                 return None
             else:
-                raise MissingMemoFile('missing memo file for {}'.format(
-                    self.filename))
+                raise MissingMemoFileError(f'missing memo file for {self.filename}')
         else:
             return path
 
     @property
-    def loaded(self):
+    def loaded(self) -> bool:
         """``True`` if records are loaded into memory."""
         return self._records is not None
 
-    def load(self):
+    def load(self) -> None:
         """Load records into memory.
 
         This loads both records and deleted records. The ``records``
         and ``deleted`` attributes will now be lists of records.
-
         """
         if not self.loaded:
             self._records = list(self._iter_records(b' '))
             self._deleted = list(self._iter_records(b'*'))
 
-    def unload(self):
+    def unload(self) -> None:
         """Unload records from memory.
 
         The records and deleted attributes will now be instances of
@@ -191,7 +202,7 @@ class DBF(object):
         self._deleted = None
 
     @property
-    def records(self):
+    def records(self) -> list[Any] | RecordIterator:
         """Records (not included deleted ones). When loaded a list of records,
         when not loaded a new ``RecordIterator`` object.
         """
@@ -201,7 +212,7 @@ class DBF(object):
             return RecordIterator(self, b' ')
 
     @property
-    def deleted(self):
+    def deleted(self) -> list[Any] | RecordIterator:
         """Deleted records. When loaded a list of records, when not loaded a
         new ``RecordIterator`` object.
         """
@@ -210,8 +221,8 @@ class DBF(object):
         else:
             return RecordIterator(self, b'*')
 
-    def _read_header(self, infile):
-        # Todo: more checks?
+    def _read_header(self, infile) -> None:
+        """Read the DBF header."""
         self.header = DBFHeader.read(infile)
 
         if self.encoding is None:
@@ -220,10 +231,12 @@ class DBF(object):
             except LookupError:
                 self.encoding = 'ascii'
 
-    def _decode_text(self, data):
+    def _decode_text(self, data: bytes) -> str:
+        """Decode text using the specified encoding."""
         return data.decode(self.encoding, errors=self.char_decode_errors)
 
-    def _read_field_headers(self, infile):
+    def _read_field_headers(self, infile) -> None:
+        """Read the field headers from the DBF file."""
         while True:
             sep = infile.read(1)
             if sep in (b'\r', b'\n', b''):
@@ -246,21 +259,20 @@ class DBF(object):
                 field.name = field.name.lower()
 
             self.field_names.append(field.name)
-
             self.fields.append(field)
 
-    def _open_memofile(self):
+    def _open_memofile(self) -> Any:
+        """Open the memo file if it exists."""
         if self.memofilename and not self.raw:
             return open_memofile(self.memofilename, self.header.dbversion)
         else:
             return FakeMemoFile(self.memofilename)
 
-    def _check_headers(self):
+    def _check_headers(self) -> None:
+        """Check headers for possible format errors."""
         field_parser = self.parserclass(self)
 
-        """Check headers for possible format errors."""
         for field in self.fields:
-
             if field.type == 'I' and field.length != 4:
                 message = 'Field type I must have length 4 (was {})'
                 raise ValueError(message.format(field.length))
@@ -270,14 +282,15 @@ class DBF(object):
                 raise ValueError(message.format(field.length))
 
             elif not field_parser.field_type_supported(field.type):
-                # Todo: return as byte string?
-                raise ValueError('Unknown field type: {!r}'.format(field.type))
+                raise ValueError(f'Unknown field type: {field.type!r}')
 
-    def _skip_record(self, infile):
+    def _skip_record(self, infile) -> None:
+        """Skip a record in the DBF file."""
         # -1 for the record separator which was already read.
         infile.seek(self.header.recordlen - 1, 1)
 
-    def _count_records(self, record_type=b' '):
+    def _count_records(self, record_type: bytes = b' ') -> int:
+        """Count the number of records of a given type."""
         count = 0
 
         with open(self.filename, 'rb') as infile:
@@ -297,7 +310,8 @@ class DBF(object):
 
         return count
 
-    def _iter_records(self, record_type=b' '):
+    def _iter_records(self, record_type: bytes = b' ') -> Any:
+        """Iterate over records of a given type."""
         with open(self.filename, 'rb') as infile, \
              self._open_memofile() as memofile:
 
@@ -331,25 +345,27 @@ class DBF(object):
                 else:
                     skip_record(infile)
 
-    def __iter__(self):
+    def __iter__(self) -> Any:
+        """Iterate over all records."""
         if self.loaded:
-            return list.__iter__(self._records)
+            return iter(self._records)
         else:
             return self._iter_records()
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Return the number of records."""
         return len(self.records)
 
-    def __repr__(self):
-        if self.loaded:
-            status = 'loaded'
-        else:
-            status = 'unloaded'
-        return '<{} DBF table {!r}>'.format(status, self.filename)
+    def __repr__(self) -> str:
+        """Return a string representation of the DBF table."""
+        status = 'loaded' if self.loaded else 'unloaded'
+        return f'<{status} DBF table {self.filename!r}>'
 
-    def __enter__(self):
+    def __enter__(self) -> "DBF":
+        """Context manager entry."""
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type_: Any, value: Any, traceback: Any) -> bool:
+        """Context manager exit."""
         self.unload()
         return False

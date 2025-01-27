@@ -3,7 +3,7 @@ Based on the list found here:
 
 http://www.dbf2002.com/dbf-file-format.html
 """
-DBVERSION_STRINGS = {
+DBVERSION_STRINGS: dict[int, str]    = {
     0x02: 'FoxBASE',
     0x03: 'FoxBASE+/Dbase III plus, no memory',
     0x30: 'Visual FoxPro',
@@ -24,4 +24,4 @@ def get_dbversion_string(dbversion):
     try:
         return DBVERSION_STRINGS[dbversion]
     except KeyError:
-        return 'Unknown (0x{:02x})'.format(dbversion)
+        return f'Unknown (0x{dbversion:02x})'

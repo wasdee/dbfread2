@@ -1,5 +1,5 @@
 # Table from dbf.py by Ethan Furman
-codepages   = {
+codepages: dict[int, tuple[str, str]] = {
     0x00: ('ascii', "plain ol' ascii"),
     0x01: ('cp437', 'U.S. MS-DOS'),
     0x02: ('cp850', 'International MS-DOS'),
@@ -67,10 +67,10 @@ codepages   = {
 }
 
 
-def guess_encoding(language_driver):
+def guess_encoding(language_driver: int) -> str:
     if language_driver in codepages:
         return codepages[language_driver][0]
     else:
         raise LookupError('Unable to guess encoding '
                           'for languager driver byte '
-                          '0x{:x}'.format(language_driver))
+                          f'0x{language_driver:x}')

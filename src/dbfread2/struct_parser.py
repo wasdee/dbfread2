@@ -8,16 +8,16 @@ import struct
 
 
 def _make_struct_class(name, names):
-    class Struct(object):
+    class Struct:
         _names = names
 
         def __init__(self, **kwargs):
             vars(self).update(kwargs)
 
         def __repr__(self):
-            fields = ', '.join('{}={!r}'.format(name, getattr(self, name))
+            fields = ', '.join(f'{name}={getattr(self, name)!r}'
                                for name in self._names)
-            return '{}({})'.format(self.__class__.__name__, fields)
+            return f'{self.__class__.__name__}({fields})'
 
     Struct.__name__ = name
     return Struct
@@ -33,7 +33,7 @@ class StructParser:
 
     def unpack(self, data):
         """Unpack struct from binary string and return a named tuple."""
-        items = zip(self.names, self.struct.unpack(data))
+        items = zip(self.names, self.struct.unpack(data), strict=False)
         return self.Class(**dict(items))
 
     def read(self, file):

@@ -7,10 +7,9 @@ Todo:
   - handle patterns that already have brackets
 """
 
-from __future__ import print_function
-import os
-import glob
 import fnmatch
+import glob
+import os
 
 
 def ipat(pat):
@@ -24,7 +23,7 @@ def ipat(pat):
             upper = char.upper()
             lower = char.lower()
             if upper != lower:
-                newpat += '[{}{}]'.format(upper, lower)
+                newpat += f'[{upper}{lower}]'
             else:
                 newpat += char
         else:
@@ -60,4 +59,4 @@ def ifind(pat, ext=None):
         return None
 
 
-__all__ = ['ipat', 'ifnmatch', 'iglob', 'ifind']
+__all__ = ['ifind', 'ifnmatch', 'iglob', 'ipat']

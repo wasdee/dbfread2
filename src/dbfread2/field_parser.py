@@ -1,10 +1,11 @@
 """
 Parser for DBF fields.
 """
-import sys
 import datetime
 import struct
+import sys
 from decimal import Decimal
+
 from .memo import BinaryMemo
 
 PY2 = sys.version_info[0] == 2
@@ -23,7 +24,7 @@ class InvalidValue(bytes):
             # "InvalidValue(b'value here')".
             text = 'b' + text
 
-        return 'InvalidValue({})'.format(text)
+        return f'InvalidValue({text})'
 
 
 class FieldParser:
@@ -74,8 +75,8 @@ class FieldParser:
         """Parse field and return value"""
         try:
             func = self._lookup[field.type]
-        except KeyError:
-            raise ValueError('Unknown field type: {!r}'.format(field.type))
+        except KeyError as e:
+            raise ValueError(f'Unknown field type: {field.type!r}') from e
         else:
             return func(field, data)
 
@@ -91,13 +92,13 @@ class FieldParser:
         """Parse date field and return datetime.date or None"""
         try:
             return datetime.date(int(data[:4]), int(data[4:6]), int(data[6:8]))
-        except ValueError:
+        except ValueError as e:
             if data.strip(b' 0\0') == b'':
                 # A record containing only spaces and/or zeros is
                 # a NULL value.
                 return None
             else:
-                raise ValueError('invalid date {!r}'.format(data))
+                raise ValueError(f'invalid date {data!r}') from e
 
     def parseF(self, field, data):
         """Parse float field and return float or None"""
@@ -133,12 +134,12 @@ class FieldParser:
         else:
             try:
                 return int(data)
-            except ValueError:
+            except ValueError as e:
                 if data.strip(b' \x00') == b'':
                     return 0
                 else:
                     raise ValueError(
-                        'Memo index is not an integer: {!r}'.format(data))
+                        f'Memo index is not an integer: {data!r}') from e
 
     def parseM(self, field, data):
         """Parse memo field (M, G, B or P)
@@ -151,11 +152,10 @@ class FieldParser:
         # These should not be decoded as string.
         if isinstance(memo, BinaryMemo):
             return memo
+        elif memo is None:
+            return None
         else:
-            if memo is None:
-                return None
-            else:
-                return self.decode_text(memo)
+            return self.decode_text(memo)
 
     def parseN(self, field, data):
         """Parse numeric field (N)

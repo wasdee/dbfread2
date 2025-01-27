@@ -2,8 +2,11 @@
 Tests reading from database.
 """
 import datetime
+
 from pytest import fixture
+
 from dbfread2 import DBF
+
 
 @fixture
 def table():
@@ -11,18 +14,18 @@ def table():
 
 @fixture
 def loaded_table():
-    return DBF('tests/cases/memotest.dbf', load=True)
+    return DBF('tests/cases/memotest.dbf', preload=True)
 
 # This relies on people.dbf having this exact content.
-records = [{u'NAME': u'Alice',
-            u'BIRTHDATE': datetime.date(1987, 3, 1),
-            u'MEMO': u'Alice memo'},
-           {u'NAME': u'Bob',
-            u'BIRTHDATE': datetime.date(1980, 11, 12),
-            u'MEMO': u'Bob memo'}]
-deleted_records = [{u'NAME': u'Deleted Guy',
-                    u'BIRTHDATE': datetime.date(1979, 12, 22),
-                    u'MEMO': u'Deleted Guy memo'}]
+records = [{'NAME': 'Alice',
+            'BIRTHDATE': datetime.date(1987, 3, 1),
+            'MEMO': 'Alice memo'},
+           {'NAME': 'Bob',
+            'BIRTHDATE': datetime.date(1980, 11, 12),
+            'MEMO': 'Bob memo'}]
+deleted_records = [{'NAME': 'Deleted Guy',
+                    'BIRTHDATE': datetime.date(1979, 12, 22),
+                    'MEMO': 'Deleted Guy memo'}]
 
 def test_len(table, loaded_table):
     assert len(table) == 2

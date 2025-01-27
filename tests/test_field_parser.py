@@ -1,18 +1,21 @@
 import datetime
 from decimal import Decimal
+
 from pytest import raises
+
 from dbfread2.field_parser import FieldParser
 
-class MockHeader(object):
+
+class MockHeader:
     dbversion = 0x02
 
-class MockDBF(object):
+class MockDBF:
     def __init__(self):
         self.header = MockHeader()
         self.encoding = 'ascii'
         self.char_decode_errors = 'strict'
 
-class MockField(object):
+class MockField:
     def __init__(self, type='', **kwargs):
         self.type = type
         self.__dict__.update(kwargs)
@@ -44,7 +47,7 @@ def test_0():
 def test_C():
     parse = make_field_parser('C')
 
-    assert type(parse(b'test')) == type(u'')
+    assert isinstance(parse(b'test'), str)
 
 def test_D():
     parse = make_field_parser('D')
@@ -106,8 +109,8 @@ def test_L():
 def test_M():
     parse = make_field_parser('M', memofile=MockMemoFile({1: b'test'}))
 
-    assert parse(b'\x01\x00\x00\x00') == u'test'
-    assert parse(b'1') == u'test'
+    assert parse(b'\x01\x00\x00\x00') == 'test'
+    assert parse(b'1') == 'test'
     assert parse(b'') is None
     with raises(ValueError):
         parse(b'NotInteger')
@@ -118,14 +121,14 @@ def test_B():
     assert isinstance(parse(b'01abcdef'), float)
     assert parse(b'\0' * 8) == 0.0
     # Data must be exactly 8 bytes.
-    with raises(Exception):
+    with raises(Exception):  # noqa: B017
         parse(b'')
 
     # In other db versions it is a memo index.
     parse = make_field_parser('B', dbversion=0x02,
                               memofile=MockMemoFile({1: b'test'}))
-    parse(b'1') == b'test'
-    parse(b'') is None
+    assert parse(b'1') == b'test'
+    assert parse(b'') is None
 
 def test_N():
     parse = make_field_parser('N')

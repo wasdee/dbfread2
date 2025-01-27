@@ -4,8 +4,8 @@ This creates the example file people.dbf.
 
 You need the dbfpy library to run this.
 """
-from __future__ import print_function
 from dbfpy import dbf
+
 
 def make_example_file(filename, fields, records, delete_last_record=False):
     field_names = [field[0] for field in fields]
@@ -19,7 +19,7 @@ def make_example_file(filename, fields, records, delete_last_record=False):
 
     for data in records:
         record = db.newRecord()
-        for name, value in zip(field_names, data):
+        for name, value in zip(field_names, data, strict=False):
             record[name] = value
         record.store()
 

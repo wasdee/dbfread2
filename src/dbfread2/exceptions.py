@@ -1,10 +1,10 @@
-class DBFNotFound(IOError):
+class DBFNotFoundError(IOError):
     """Raised if the DBF file was not found."""
     pass
 
 
-class MissingMemoFile(IOError):
+class MissingMemoFileError(IOError):
     """Raised if the corresponding memo file was not found."""
 
 
-__all__ = ['DBFNotFound', 'MissingMemoFile']
+__all__ = ['DBFNotFoundError', 'MissingMemoFileError']
