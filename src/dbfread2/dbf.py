@@ -5,7 +5,7 @@ from collections.abc import Callable
 from datetime import date
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO, Union
 
 from .codepages import guess_encoding
 from .dbversions import get_dbversion_string
@@ -81,12 +81,12 @@ class DBF:
 
     def __init__(  # noqa: PLR0913
         self,
-        filepath: str | PathLike,
+        filepath: str | PathLike[str],
         encoding: str | None = None,
         ignore_case: bool = True,
         lowercase_names: bool = False,
-        parser_class: type = FieldParser,
-        record_factory: Callable | None = None,
+        parser_class: type[FieldParser] = FieldParser,
+        record_factory: Callable[[list[tuple[str, Any]]], Any] | None = None,
         preload: bool = False,
         keep_raw: bool = False,
         ignore_missing_memo: bool = False,
@@ -119,23 +119,26 @@ class DBF:
         else:
             self.recfactory = record_factory
 
+        # Convert to Path object
+        filepath = Path(filepath)
         # Name part before .dbf is the table name
-        self.name = Path(filepath).stem.lower()
+        self.name = filepath.stem.lower()
         self._records: list[Any] | None = None
         self._deleted: list[Any] | None = None
 
         if ignore_case:
-            self.filename = ifind(filepath)
+            self.filename = str(ifind(str(filepath)))
             if not self.filename:
                 raise DBFNotFoundError(f'could not find file {filepath!r}')
         else:
-            self.filename = filepath
+            self.filename = str(filepath)
 
         # Filled in by self._read_headers()
         self.memofilename: str | None = None
         self.header: Any = None  # DBFHeader instance
         self.fields: list[Any] = []  # list of DBFField instances
         self.field_names: list[str] = []  # list of field names
+        self.date: date | None = None
 
         with open(self.filename, mode='rb') as infile:
             self._read_header(infile)
@@ -221,7 +224,7 @@ class DBF:
         else:
             return RecordIterator(self, b'*')
 
-    def _read_header(self, infile) -> None:
+    def _read_header(self, infile: BinaryIO) -> None:
         """Read the DBF header."""
         self.header = DBFHeader.read(infile)
 
@@ -233,7 +236,7 @@ class DBF:
 
     def _decode_text(self, data: bytes) -> str:
         """Decode text using the specified encoding."""
-        return data.decode(self.encoding, errors=self.char_decode_errors)
+        return data.decode(self.encoding or 'ascii', errors=self.char_decode_errors)
 
     def _read_field_headers(self, infile) -> None:
         """Read the field headers from the DBF file."""
