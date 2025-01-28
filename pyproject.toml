@@ -22,7 +22,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/wasdee/dbfread2"
-Documentation = "https://dbfread2.readthedocs.io/"
+Documentation = "https://wasdee.github.io/dbfread2/"
 
 [tool.ruff]
 target-version = "py312"
