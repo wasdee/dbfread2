@@ -32,7 +32,7 @@ for record in DBF('people.dbf'):
 # {'NAME': 'Bob', 'BIRTHDATE': datetime.date(1980, 11, 12)}
 
 # Load all records into memory
-table = DBF('people.dbf', load=True)
+table = DBF('people.dbf', preload=True)
 print(table.records[0]['NAME'])  # Returns: 'Alice'
 ```
 
