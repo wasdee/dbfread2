@@ -12,6 +12,7 @@ New author: Nutchanon Ninyawee me@nutchanon.org [GitHub](https://github.com/wasd
 - Use `ruff` as the linter and formatter.
 - Use `mypy` as the static type checker.
 - if you want to rename a function, please explicitly ask me first.
+- when interacing with change log, grab date from cli.
 
 # DX
 
