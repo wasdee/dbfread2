@@ -19,7 +19,7 @@ import argparse
 import sqlite3
 import traceback
 
-from dbfread import DBF
+from dbfread2 import DBF
 
 typemap = {
     'F': 'FLOAT',

@@ -2,7 +2,8 @@
 A field parser that returns invalid values as InvalidValue objects
 instead of raising ValueError.
 """
-from dbfread import DBF, FieldParser, InvalidValue
+from dbfread2 import DBF, FieldParser, InvalidValue
+
 
 class MyFieldParser(FieldParser):
     def parse(self, field, data):
@@ -11,8 +12,8 @@ class MyFieldParser(FieldParser):
         except ValueError:
             return InvalidValue(data)
 
-table = DBF('files/invalid_value.dbf', parserclass=MyFieldParser)
+table = DBF('files/invalid_value.dbf', parser_class=MyFieldParser)
 for i, record in enumerate(table):
     for name, value in record.items():
         if isinstance(value, InvalidValue):
-            print('records[{}][{!r}] == {!r}'.format(i, name, value))
+            print(f'records[{i}][{name!r}] == {value!r}')

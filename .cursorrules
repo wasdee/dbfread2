@@ -1,0 +1,24 @@
+On the mission to recreate the `dbfread` library to `dbfread2`.
+New author: Nutchanon Ninyawee me@nutchanon.org [GitHub](https://github.com/wasdee/)
+
+# Actions
+
+- Please keep adding missing type annotations.
+- Remove all version guard code where it is not needed since we are using Python 3.12+.
+
+# Rules
+
+- Use `py312` as the target version.
+- Use `ruff` as the linter and formatter.
+- Use `mypy` as the static type checker.
+- if you want to rename a function, please explicitly ask me first.
+- when interacing with change log, grab date from cli.
+
+# DX
+
+- support `pathlib.Path` for all file operations
+
+# Development
+
+- use `mise-en-place` to manage Python versions and packages
+- use `uv` instead of `pip` 100% of the time
