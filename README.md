@@ -107,6 +107,41 @@ mise run docs:check    # Check for issues
 - 🧹 [ruff](https://github.com/astral-sh/ruff) - Linting & formatting
 - 🔍 [mypy](https://mypy-lang.org/) - Static type checking
 
+### 📝 Writing DBF Files
+
+While `dbfread2` focuses on reading DBF files, here are recommended libraries for writing DBF files:
+
+#### Recommended DBF Writers
+
+1. **dbf** (by Ethan Furman)
+
+   - Most comprehensive DBF writer
+   - Supports multiple DBF formats (dBase III+, FP, VFP, Clipper)
+   - Rich field type support including memo fields
+   - Memory-efficient operations
+   - [GitHub](https://github.com/ethanfurman/dbf)
+
+2. **pybase3**
+
+   - Modern SQL-like interface
+   - Simple API focused on dBase III
+   - Active development
+   - Built-in CLI tools
+   - [GitHub](https://github.com/MikeOfZen/pybase3)
+
+3. **ydbf**
+   - Clean, modern Python implementation
+   - Streaming write support
+   - No external dependencies
+   - Good for basic DBF operations
+   - [GitHub](https://github.com/y-p/ydbf)
+
+Choose based on your needs:
+
+- Use **dbf** for enterprise/legacy systems needing comprehensive format support
+- Use **pybase3** for modern, simple dBase III operations
+- Use **ydbf** for basic operations with clean Python code
+
 ## 📄 License
 
 MIT License
